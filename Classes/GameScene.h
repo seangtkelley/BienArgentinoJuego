@@ -2,16 +2,19 @@
 #define __GAME_SCENE_H__
 
 #include "cocos2d.h"
-#include "CCParallaxScrollNode.h"
 
 class Game : public cocos2d::Scene
 {
 public:
-    cocos2d::Sprite* sprite;
     cocos2d::Size visibleSize;
     cocos2d::Size windowSize;
 
-    CCParallaxScrollNode *parallax;
+    cocos2d::Sprite* bg1;
+    cocos2d::Sprite* bg2;
+    cocos2d::Sprite* bg3;
+    cocos2d::Sprite* bg4;
+
+    cocos2d::Sprite* player;
 
     static cocos2d::Scene* createScene();
 
@@ -25,7 +28,7 @@ public:
 
     void OnAcceleration(cocos2d::Acceleration *acc, cocos2d::Event *event);
 
-    void update(float delta);
+    void update(float) override;
 };
 
 #endif // __GAME_SCENE_H__

@@ -18,8 +18,8 @@ bool Game::init()
         return false;
     }
 
-    this->visibleSize = Director::getInstance()->getVisibleSize();
-    this->windowSize = Director::getInstance()->getWinSize();
+    visibleSize = Director::getInstance()->getVisibleSize();
+    windowSize = Director::getInstance()->getWinSize();
     Vec2 origin = Director::getInstance()->getVisibleOrigin();
 
     /////////////////////////////
@@ -32,7 +32,7 @@ bool Game::init()
                                            "CloseSelected.png",
                                            CC_CALLBACK_1(Game::menuCloseCallback, this));
 
-    closeItem->setPosition(Vec2(origin.x + this->visibleSize.width - closeItem->getContentSize().width/2 ,
+    closeItem->setPosition(Vec2(origin.x + visibleSize.width - closeItem->getContentSize().width/2 ,
                                 origin.y + closeItem->getContentSize().height/2));
 
     // create menu, it's an autorelease object
@@ -41,55 +41,83 @@ bool Game::init()
     this->addChild(menu, 1);
 
     // create parallax background
-    Sprite *bg1 = Sprite::create("GameBackground.jpg");
-    Sprite *bg2 = Sprite::create("GameBackground.jpg");
-    Sprite *bg3 = Sprite::create("GameBackground.jpg");
+    bg1 = Sprite::create("GameBackground.jpg");
+    bg2 = Sprite::create("GameBackground.jpg");
+    bg3 = Sprite::create("GameBackground.jpg");
+    bg4 = Sprite::create("GameBackground.jpg");
 
-    float scale = MAX(this->visibleSize.width / bg1->getContentSize().width, this->visibleSize.height / bg1->getContentSize().height);
-
+    float scale = MAX(visibleSize.width / bg1->getContentSize().width, visibleSize.height / bg1->getContentSize().height);
     bg1->setScale(scale);
     bg2->setScale(scale);
     bg3->setScale(scale);
+    bg4->setScale(scale);
 
-    //background->setPosition(Vec2(origin.x + visibleSize.width / 2, origin.y + visibleSize.height / 2));
+    bg1->setPosition(Vec2(origin.x + visibleSize.width / 2, origin.y + visibleSize.height / 2));
+    bg2->setPosition(Vec2(bg1->getPosition().x + bg1->getContentSize().width, bg1->getPosition().y));
+    bg3->setPosition(Vec2(bg2->getPosition().x + bg1->getContentSize().width, bg1->getPosition().y));
+    bg4->setPosition(Vec2(bg3->getPosition().x + bg1->getContentSize().width, bg1->getPosition().y));
 
-    this->parallax->addInfiniteScrollXWithZ(0, Point(1, 1), Point(0,0), bg1, bg2, bg3, NULL);
-    this->addChild(this->parallax);
+    this->addChild(bg1);
+    this->addChild(bg2);
+    this->addChild(bg3);
+    this->addChild(bg4);
 
-    // add "HelloWorld" splash screen"
-    this->sprite = Sprite::create("RedCar.png");
+    player = Sprite::create("RedCar.png");
 
-    // position the sprite on the center of the screen
-    this->sprite->setPosition(Vec2(origin.x + sprite->getContentSize().width, this->visibleSize.height/2 + origin.y));
+    player->setPosition(Vec2(origin.x + player->getContentSize().width, visibleSize.height/2 + origin.y));
 
-    // add the sprite as a child to this layer
-    this->addChild(this->sprite, 2);
+    this->addChild(player, 2);
 
     Device::setAccelerometerEnabled(true);
     auto accelListener = EventListenerAcceleration::create(CC_CALLBACK_2(Game::OnAcceleration, this));
 
     _eventDispatcher->addEventListenerWithSceneGraphPriority(accelListener, this);
 
+    this->scheduleUpdate();
     return true;
 }
 
 void Game::update(float delta)
 {
-	this->parallax->updateWithVelocity(Point(-0.1, 0), delta);
+  auto speed = 400;
+
+  auto position = bg1->getPosition();
+  position.x -= speed * delta;
+  if (position.x  < 0 - (bg1->getBoundingBox().size.width / 2))
+    position.x = this->getBoundingBox().getMaxX() + bg1->getBoundingBox().size.width/2;
+  bg1->setPosition(position);
+
+  position = bg2->getPosition();
+  position.x -= speed * delta;
+  if (position.x  < 0 - (bg2->getBoundingBox().size.width / 2))
+    position.x = this->getBoundingBox().getMaxX() + bg2->getBoundingBox().size.width/2;
+  bg2->setPosition(position);
+
+  position = bg3->getPosition();
+  position.x -= speed * delta;
+  if (position.x  < 0 - (bg3->getBoundingBox().size.width / 2))
+    position.x = this->getBoundingBox().getMaxX() + bg3->getBoundingBox().size.width/2;
+  bg3->setPosition(position);
+
+  position = bg4->getPosition();
+  position.x -= speed * delta;
+  if (position.x  < 0 - (bg4->getBoundingBox().size.width / 2))
+    position.x = this->getBoundingBox().getMaxX() + bg4->getBoundingBox().size.width/2;
+  bg4->setPosition(position);
 }
 
 void Game::OnAcceleration(cocos2d::Acceleration *acc, cocos2d::Event *event){
-  auto w = this->visibleSize.width;
-  auto h = this->visibleSize.height;
+  auto w = visibleSize.width;
+  auto h = visibleSize.height;
 
-  auto x = this->sprite->getPosition().x;
-  auto y = this->sprite->getPosition().y;
+  auto x = player->getPosition().x;
+  auto y = player->getPosition().y;
 
   x = x + (acc->x * w * 0.075);
   y = y + (acc->y * h * 0.075);
 
-  if(x > (sprite->getContentSize().width/2) && x <= w-(sprite->getContentSize().width/2) && y > (sprite->getContentSize().height) && y <= h+(sprite->getContentSize().height/2)){
-    this->sprite->setPosition(x, y);
+  if(x > (player->getContentSize().width/2) && x <= w-(player->getContentSize().width/2) && y > (player->getContentSize().height) && y <= h+(player->getContentSize().height/2)){
+    player->setPosition(x, y);
   }
 }
 
