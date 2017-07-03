@@ -18,29 +18,12 @@ bool Game::init()
         return false;
     }
 
+    // initialize game variables
     visibleSize = Director::getInstance()->getVisibleSize();
     windowSize = Director::getInstance()->getWinSize();
     Vec2 origin = Director::getInstance()->getVisibleOrigin();
 
-    /////////////////////////////
-    // 2. add a menu item with "X" image, which is clicked to quit the program
-    //    you may modify it.
-
-    // add a "close" icon to exit the progress. it's an autorelease object
-    auto closeItem = MenuItemImage::create(
-                                           "CloseNormal.png",
-                                           "CloseSelected.png",
-                                           CC_CALLBACK_1(Game::menuCloseCallback, this));
-
-    closeItem->setPosition(Vec2(origin.x + visibleSize.width - closeItem->getContentSize().width/2 ,
-                                origin.y + closeItem->getContentSize().height/2));
-
-    // create menu, it's an autorelease object
-    auto menu = Menu::create(closeItem, NULL);
-    menu->setPosition(Vec2::ZERO);
-    this->addChild(menu, 1);
-
-    // create parallax background
+    // create scrolling background
     bg1 = Sprite::create("GameBackground.jpg");
     bg2 = Sprite::create("GameBackground.jpg");
     bg3 = Sprite::create("GameBackground.jpg");
@@ -62,16 +45,40 @@ bool Game::init()
     this->addChild(bg3);
     this->addChild(bg4);
 
+    // create player car
     player = Sprite::create("RedCar.png");
-
     player->setPosition(Vec2(origin.x + player->getContentSize().width, visibleSize.height/2 + origin.y));
-
     this->addChild(player, 2);
+    /* Implementation of effects for future reference
+    lens = Lens3D::create(10, Size(32,24), Vec2(100,180), 150);
+    waves = Waves3D::create(10, Size(15,10), 18, 15);
+    auto nodeGrid = NodeGrid::create();
+    nodeGrid->addChild(player);
+    nodeGrid->runAction(RepeatForever::create((Sequence*)Sequence::create(waves, lens, NULL)));
+    this->addChild(nodeGrid);
+    */
 
+    // add accelerometer listener for player car
     Device::setAccelerometerEnabled(true);
     auto accelListener = EventListenerAcceleration::create(CC_CALLBACK_2(Game::OnAcceleration, this));
-
     _eventDispatcher->addEventListenerWithSceneGraphPriority(accelListener, this);
+
+    // create car obstacle
+    carObstacle = Sprite::create("RedCar.png");
+    carObstacleSpeedX = 100;
+    carObstacle->setPosition(bg2->getPosition());
+    this->addChild(carObstacle, 2);
+
+    // rotate car obstacle
+    auto initRotate = RotateBy::create(0.1, 180);
+    carObstacle->runAction(initRotate);
+
+    // create tree obstacles
+
+    // create rock obstacles
+
+    // start timer
+    this->schedule(schedule_selector(Game::UpdateTimer),1.0f);
 
     this->scheduleUpdate();
     return true;
@@ -79,31 +86,57 @@ bool Game::init()
 
 void Game::update(float delta)
 {
-  auto speed = 400;
+  // check game variables
+  if(timer == 5){
+    //player->runAction(waves);
+  }
+
+  // scroll background images
+  auto bgspeed = 400;
 
   auto position = bg1->getPosition();
-  position.x -= speed * delta;
+  position.x -= bgspeed * delta;
   if (position.x  < 0 - (bg1->getBoundingBox().size.width / 2))
     position.x = this->getBoundingBox().getMaxX() + bg1->getBoundingBox().size.width/2;
   bg1->setPosition(position);
 
   position = bg2->getPosition();
-  position.x -= speed * delta;
+  position.x -= bgspeed * delta;
   if (position.x  < 0 - (bg2->getBoundingBox().size.width / 2))
     position.x = this->getBoundingBox().getMaxX() + bg2->getBoundingBox().size.width/2;
   bg2->setPosition(position);
 
   position = bg3->getPosition();
-  position.x -= speed * delta;
+  position.x -= bgspeed * delta;
   if (position.x  < 0 - (bg3->getBoundingBox().size.width / 2))
     position.x = this->getBoundingBox().getMaxX() + bg3->getBoundingBox().size.width/2;
   bg3->setPosition(position);
 
   position = bg4->getPosition();
-  position.x -= speed * delta;
+  position.x -= bgspeed * delta;
   if (position.x  < 0 - (bg4->getBoundingBox().size.width / 2))
     position.x = this->getBoundingBox().getMaxX() + bg4->getBoundingBox().size.width/2;
   bg4->setPosition(position);
+
+  // update car obstacles
+  position = carObstacle->getPosition();
+  position.x -=  carObstacleSpeedX * delta;
+  if (position.x  < 0 - (carObstacle->getBoundingBox().size.width / 2)){
+    carObstacleSpeedX = cocos2d::RandomHelper::random_int(100, 500);
+    carObstacleSpeedY = cocos2d::RandomHelper::random_int(-100, 100);
+    position.x = this->getBoundingBox().getMaxX() + carObstacle->getBoundingBox().size.width/2;
+    position.y = visibleSize.height/2;
+  }
+  carObstacle->setPosition(position);
+
+  // update tree obstacles
+
+  // update car obstacles
+}
+
+void Game::UpdateTimer(float dt)
+{
+  timer++;
 }
 
 void Game::OnAcceleration(cocos2d::Acceleration *acc, cocos2d::Event *event){

@@ -15,6 +15,15 @@ public:
     cocos2d::Sprite* bg4;
 
     cocos2d::Sprite* player;
+    cocos2d::Sprite* carObstacle;
+
+    cocos2d::ActionInterval* lens;
+    cocos2d::ActionInterval* waves;
+
+    int carObstacleSpeedX;
+    int carObstacleSpeedY;
+
+    int timer;
 
     static cocos2d::Scene* createScene();
 
@@ -29,6 +38,8 @@ public:
     void OnAcceleration(cocos2d::Acceleration *acc, cocos2d::Event *event);
 
     void update(float) override;
+
+    void UpdateTimer(float);
 };
 
 #endif // __GAME_SCENE_H__
