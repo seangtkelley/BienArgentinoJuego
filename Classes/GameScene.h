@@ -8,6 +8,7 @@ class Game : public cocos2d::Scene
 public:
     cocos2d::Size visibleSize;
     cocos2d::Size windowSize;
+    cocos2d::Vec2 origin;
 
     cocos2d::Sprite* bg1;
     cocos2d::Sprite* bg2;

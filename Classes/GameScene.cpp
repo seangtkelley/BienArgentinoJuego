@@ -21,13 +21,16 @@ bool Game::init()
     // initialize game variables
     visibleSize = Director::getInstance()->getVisibleSize();
     windowSize = Director::getInstance()->getWinSize();
-    Vec2 origin = Director::getInstance()->getVisibleOrigin();
+    origin = Director::getInstance()->getVisibleOrigin();
+
+    // open sprite sheet
+    SpriteFrameCache::getInstance()->addSpriteFramesWithFile("game-assets.plist");
 
     // create scrolling background
-    bg1 = Sprite::create("GameBackground.jpg");
-    bg2 = Sprite::create("GameBackground.jpg");
-    bg3 = Sprite::create("GameBackground.jpg");
-    bg4 = Sprite::create("GameBackground.jpg");
+    bg1 = Sprite::createWithSpriteFrameName("game-background.jpg");
+    bg2 = Sprite::createWithSpriteFrameName("game-background.jpg");
+    bg3 = Sprite::createWithSpriteFrameName("game-background.jpg");
+    bg4 = Sprite::createWithSpriteFrameName("game-background.jpg");
 
     float scale = MAX(visibleSize.width / bg1->getContentSize().width, visibleSize.height / bg1->getContentSize().height);
     bg1->setScale(scale);
@@ -46,7 +49,7 @@ bool Game::init()
     this->addChild(bg4);
 
     // create player car
-    player = Sprite::create("RedCar.png");
+    player = Sprite::createWithSpriteFrameName("red-car.png");
     player->setPosition(Vec2(origin.x + player->getContentSize().width, visibleSize.height/2 + origin.y));
     this->addChild(player, 2);
     /* Implementation of effects for future reference
@@ -64,7 +67,7 @@ bool Game::init()
     _eventDispatcher->addEventListenerWithSceneGraphPriority(accelListener, this);
 
     // create car obstacle
-    carObstacle = Sprite::create("RedCar.png");
+    carObstacle = Sprite::createWithSpriteFrameName("red-car.png");
     carObstacleSpeedX = 100;
     carObstacle->setPosition(bg2->getPosition());
     this->addChild(carObstacle, 2);
@@ -92,7 +95,7 @@ void Game::update(float delta)
   }
 
   // scroll background images
-  auto bgspeed = 400;
+  auto bgspeed = 1000;
 
   auto position = bg1->getPosition();
   position.x -= bgspeed * delta;
@@ -121,8 +124,8 @@ void Game::update(float delta)
   // update car obstacles
   position = carObstacle->getPosition();
   position.x -=  carObstacleSpeedX * delta;
-  if (position.x  < 0 - (carObstacle->getBoundingBox().size.width / 2)){
-    carObstacleSpeedX = cocos2d::RandomHelper::random_int(100, 500);
+  if (position.x < 0 - (carObstacle->getBoundingBox().size.width / 2)){
+    carObstacleSpeedX = cocos2d::RandomHelper::random_int(500, 1000);
     carObstacleSpeedY = cocos2d::RandomHelper::random_int(-100, 100);
     position.x = this->getBoundingBox().getMaxX() + carObstacle->getBoundingBox().size.width/2;
     position.y = visibleSize.height/2;
@@ -143,14 +146,24 @@ void Game::OnAcceleration(cocos2d::Acceleration *acc, cocos2d::Event *event){
   auto w = visibleSize.width;
   auto h = visibleSize.height;
 
-  auto x = player->getPosition().x;
-  auto y = player->getPosition().y;
+  auto oldX = player->getPosition().x;
+  auto oldY = player->getPosition().y;
 
-  x = x + (acc->x * w * 0.075);
-  y = y + (acc->y * h * 0.075);
+  auto newX = oldX + (acc->x * w * 0.075);
+  auto newY = oldY + (acc->y * h * 0.075);
 
-  if(x > (player->getContentSize().width/2) && x <= w-(player->getContentSize().width/2) && y > (player->getContentSize().height) && y <= h+(player->getContentSize().height/2)){
-    player->setPosition(x, y);
+  if(newX > player->getBoundingBox().size.width/2 && newX < this->getBoundingBox().getMaxX()-(player->getContentSize().width/2)){
+    if(newY > player->getBoundingBox().size.height * 2 && newY < this->getBoundingBox().getMaxY()-player->getBoundingBox().size.height * 2){
+      player->setPosition(newX, newY);
+    } else {
+      player->setPosition(newX, oldY);
+    }
+  } else {
+    if(newY > player->getBoundingBox().size.height * 2 && newY < this->getBoundingBox().getMaxY()-player->getBoundingBox().size.height * 2){
+      player->setPosition(oldX, newY);
+    } else {
+      player->setPosition(oldX, oldY);
+    }
   }
 }
 
