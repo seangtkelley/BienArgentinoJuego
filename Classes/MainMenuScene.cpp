@@ -1,5 +1,6 @@
 #include "MainMenuScene.h"
 #include "GameScene.h"
+#include "PrelimInstScene.h"
 #include "SimpleAudioEngine.h"
 
 USING_NS_CC;
@@ -78,8 +79,8 @@ bool MainMenu::init()
 
 void MainMenu::play(cocos2d::Ref *pSender)
 {
-  auto gameScene = Game::createScene();
-  Director::getInstance()->pushScene(TransitionCrossFade::create(1.5, gameScene));
+  auto prelimInstScene = PrelimInst::createScene();
+  Director::getInstance()->pushScene(TransitionCrossFade::create(0.75, prelimInstScene));
   return;
 }
 

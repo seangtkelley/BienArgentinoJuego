@@ -16,11 +16,11 @@ public:
     // implement the "static create()" method manually
     CREATE_FUNC(Game);
 
-    void OnAcceleration(cocos2d::Acceleration *acc, cocos2d::Event *event);
+    void onAcceleration(cocos2d::Acceleration *acc, cocos2d::Event *event);
 
     void update(float) override;
 
-    void UpdateTimer(float);
+    void updateTimer(float);
 
   private:
     cocos2d::Size visibleSize;
@@ -31,6 +31,8 @@ public:
     cocos2d::Sprite* bg2;
     cocos2d::Sprite* bg3;
     cocos2d::Sprite* bg4;
+
+    bool isPaused;
 
     cocos2d::Sprite* player;
 
@@ -52,7 +54,9 @@ public:
     int carObstacleSpeedX;
     int carObstacleSpeedY;
 
-    int timer;
+    float timer;
+
+    void scrollBackground(int, float);
 };
 
 #endif // __GAME_SCENE_H__
