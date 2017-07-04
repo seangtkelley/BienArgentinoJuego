@@ -30,36 +30,41 @@ bool MainMenu::init()
     SpriteFrameCache::getInstance()->addSpriteFramesWithFile("game-assets.plist");
 
     // create menu items
-    auto play_menu_item = MenuItemFont::create("Jugar", CC_CALLBACK_1(MainMenu::play, this));
-    auto highscores_menu_item = MenuItemFont::create("Puntajes", CC_CALLBACK_1(MainMenu::highscores, this));
-    auto instructions_menu_item = MenuItemFont::create("Instrucciones", CC_CALLBACK_1(MainMenu::instructions, this));
-    auto quit_menu_item = MenuItemFont::create("Salir", CC_CALLBACK_1(MainMenu::quit, this));
+    auto play_sprite = Sprite::createWithSpriteFrameName("buttons/jugar.png");
+    auto play_selected_sprite = Sprite::createWithSpriteFrameName("buttons/jugar-selected.png");
+    auto instrucciones_sprite = Sprite::createWithSpriteFrameName("buttons/instrucciones.png");
+    auto instrucciones_selected_sprite = Sprite::createWithSpriteFrameName("buttons/instrucciones-selected.png");
+    auto salir_sprite = Sprite::createWithSpriteFrameName("buttons/salir.png");
+    auto salir_selected_sprite = Sprite::createWithSpriteFrameName("buttons/salir-selected.png");
 
-    play_menu_item->setPosition(visibleSize.width/2, (visibleSize.height/5) * 4);
-    highscores_menu_item->setPosition(visibleSize.width/2, (visibleSize.height/5) * 3);
-    instructions_menu_item->setPosition(visibleSize.width/2, (visibleSize.height/5) * 2);
-    quit_menu_item->setPosition(visibleSize.width/2, (visibleSize.height/5) * 1);
+    auto play_menu_item = MenuItemSprite::create(play_sprite, play_selected_sprite, CC_CALLBACK_1(MainMenu::play, this));
+    //auto highscores_menu_item = MenuItemFont::create("Puntajes", CC_CALLBACK_1(MainMenu::highscores, this));
+    auto instructions_menu_item = MenuItemSprite::create(instrucciones_sprite, instrucciones_selected_sprite, CC_CALLBACK_1(MainMenu::instructions, this));
+    auto quit_menu_item = MenuItemSprite::create(salir_sprite, salir_selected_sprite, CC_CALLBACK_1(MainMenu::quit, this));
 
-    play_menu_item->setColor(Color3B(27, 50, 95));
-    highscores_menu_item->setColor(Color3B(27, 50, 95));
-    instructions_menu_item->setColor(Color3B(27, 50, 95));
-    quit_menu_item->setColor(Color3B(27, 50, 95));
+    play_menu_item->setScale(2.0);
+    instructions_menu_item->setScale(2.0);
+    quit_menu_item->setScale(2.0);
+
+    play_menu_item->setPosition(visibleSize.width/2, (visibleSize.height/6) * 4);
+    //highscores_menu_item->setPosition(visibleSize.width/2, (visibleSize.height/5) * 3);
+    instructions_menu_item->setPosition(visibleSize.width/2, (visibleSize.height/6) * 3);
+    quit_menu_item->setPosition(visibleSize.width/2, (visibleSize.height/6) * 2);
 
     // create menu, it's an autorelease object
-    menu = Menu::create(play_menu_item, highscores_menu_item, instructions_menu_item, quit_menu_item, NULL);
+    menu = Menu::create(play_menu_item, /*highscores_menu_item,*/ instructions_menu_item, quit_menu_item, NULL);
     menu->setPosition(Vec2::ZERO);
-    this->addChild(menu, 1);
+    this->addChild(menu, 2);
 
-    // add a label shows "Hello World"
-    // create and initialize a label
-    auto label = Label::createWithTTF("Bien Argentino", "fonts/Marker Felt.ttf", 24);
+    // create and initialize logo
+    auto logo = Sprite::createWithSpriteFrameName("square-logo.png");
 
-    // position the label on the center of the screen
-    label->setPosition(Vec2(origin.x + visibleSize.width/2,
-                            origin.y + visibleSize.height - label->getContentSize().height));
+    // position the logo on the center of the screen
+    logo->setPosition(Vec2(origin.x + visibleSize.width/2,
+                            origin.y + visibleSize.height - visibleSize.height/4.5));
 
     // add the label as a child to this layer
-    this->addChild(label, 1);
+    this->addChild(logo, 1);
 
     auto background = Sprite::createWithSpriteFrameName("main-menu-background.jpg");
     float scale = MAX(visibleSize.width / background->getContentSize().width, visibleSize.height / background->getContentSize().height);
