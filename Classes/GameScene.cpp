@@ -1,6 +1,4 @@
 #include "GameScene.h"
-#include "PrelimInstScene.h"
-#include "DrunkInstScene.h"
 #include "SimpleAudioEngine.h"
 
 USING_NS_CC;
@@ -54,8 +52,28 @@ bool Game::init()
     this->addChild(bg3);
     this->addChild(bg4);
 
+    // set background speed
+    bgspeed = 1500;
+
+    // create instructions and pause screen
+    prelimInst = Label::create("¡Evitá los obstaculos por 15 segundos!", "Helvetica", 72);
+    prelimInst->setPosition(Vec2(origin.x + visibleSize.width/2, origin.y + visibleSize.height/2));
+    this->addChild(prelimInst, 4);
+
+    drunkInst = Label::create("¿Ahora, podés evitar los obstaculos \n mientras estás alcoholizado?", "Helvetica", 72);
+    drunkInst->setPosition(Vec2(origin.x + visibleSize.width/2, origin.y + visibleSize.height/2));
+    this->addChild(drunkInst, 4);
+    drunkInst->setOpacity(0);
+
+    pauseOverlay = Sprite::createWithSpriteFrameName("pause-overlay.png");
+    float pauseScale = MAX(visibleSize.width / pauseOverlay->getContentSize().width, visibleSize.height / pauseOverlay->getContentSize().height);
+    pauseOverlay->setScale(pauseScale);
+    pauseOverlay->setPosition(Vec2(origin.x + visibleSize.width / 2, origin.y + visibleSize.height / 2));
+    this->addChild(pauseOverlay, 3);
+    pauseOverlay->setOpacity(0.75*255);
+
     // create pause var
-    isPaused = false;
+    isPaused = true;
 
     // create player car
     player = Sprite::createWithSpriteFrameName("red-car.png");
@@ -70,16 +88,45 @@ bool Game::init()
     // create car obstacle
     carObstacle = Sprite::createWithSpriteFrameName("red-car.png");
     carObstacleSpeedX = 100;
-    carObstacle->setPosition(bg2->getPosition());
+    carObstacle->setPosition(0 - (carObstacle->getBoundingBox().size.width / 2), visibleSize.height/2);
     this->addChild(carObstacle, 2);
 
     // rotate car obstacle
     auto initRotate = RotateBy::create(0.1, 180);
     carObstacle->runAction(initRotate);
 
-    // create tree obstacles
+    // load tree obstacles
+    char str[100];
+    for(int i = 0; i < 4; i++){
+      // create Sprite
+      sprintf(str, "trees/%02d.png", i+1);
+      auto tree = Sprite::createWithSpriteFrameName(str);
 
-    // create rock obstacles
+      // put all trees beyond screen bounding box on left
+      tree->setPosition(0 - (tree->getBoundingBox().size.width / 2), visibleSize.height/2);
+
+      // add tree to vectors
+      treeObstacles.pushBack(tree);
+    }
+    // set starting trees to be first two
+    currentTrees[0] = 0;
+    currentTrees[1] = 1;
+
+    // load rock obstacles
+    for(int i = 0; i < 4; i++){
+      // create Sprite
+      sprintf(str, "rocks/%02d.png", i+1);
+      auto rock = Sprite::createWithSpriteFrameName(str);
+
+      // put all trees beyond screen bounding box on left
+      rock->setPosition(0 - (rock->getBoundingBox().size.width / 2), visibleSize.height/2);
+
+      // add tree to vectors
+      rockObstacles.pushBack(rock);
+    }
+    // set starting rocks to be first two
+    currentRocks[0] = 0;
+    currentRocks[1] = 1;
 
     // start timer
     this->schedule(schedule_selector(Game::updateTimer), 0.1f);
@@ -90,34 +137,58 @@ bool Game::init()
 
 void Game::update(float delta)
 {
-  if(timer > 1.0 && timer < 15.0){
-
+  if(timer > 1.0 && timer < 4.0){
     // scroll background images
-    this->scrollBackground(1500, delta);
+    this->scrollBackground(delta);
 
-    // update car obstacles
-    auto position = carObstacle->getPosition();
-    position.x -=  carObstacleSpeedX * delta;
-    if (position.x < 0 - (carObstacle->getBoundingBox().size.width / 2)){
-      carObstacleSpeedX = cocos2d::RandomHelper::random_int(500, 1000);
-      carObstacleSpeedY = cocos2d::RandomHelper::random_int(-100, 100);
-      position.x = this->getBoundingBox().getMaxX() + carObstacle->getBoundingBox().size.width/2;
-      position.y = visibleSize.height/2;
-    }
-    carObstacle->setPosition(position);
+  } else if(timer >= 4.0 && timer < 5.0){
+    // scroll background images
+    this->scrollBackground(delta);
 
-  } else if(timer >= 15.0 && timer < 16.0) {
-    // display instructions about driving drunk
-    if(!isPaused){
-      auto drunkInstScene = DrunkInst::createScene();
-      Director::getInstance()->pushScene(TransitionCrossFade::create(1.0, drunkInstScene));
-      isPaused = true;
-    }
-  } else if (timer > 15) {
-    // unpause game
     if(isPaused){
+      // unpause game
+      auto fadeOut = FadeOut::create(0.75);
+      prelimInst->setOpacity(0);
+      pauseOverlay->runAction(fadeOut);
       isPaused = false;
     }
+  } else if(timer >= 5.0 && timer < 20.0){
+    // scroll background images
+    this->scrollBackground(delta);
+
+    // update obstacles
+    this->updateObstacles(delta);
+
+  } else if(timer >= 20.0 && timer < 24.0) {
+    // scroll background images
+    this->scrollBackground(delta);
+
+    // display instructions about driving drunk
+    if(!isPaused){
+      auto fadeIn = FadeTo::create(0.75, 0.75*255);
+      drunkInst->setOpacity(255);
+      pauseOverlay->runAction(fadeIn);
+      this->resetObstacles();
+      isPaused = true;
+    }
+  } else if(timer >= 24.0 && timer < 25.0){
+    // scroll background images
+    this->scrollBackground(delta);
+
+    if(isPaused){
+      // unpause game
+      auto fadeOut = FadeOut::create(0.75);
+      drunkInst->setOpacity(0);
+      pauseOverlay->runAction(fadeOut);
+      isPaused = false;
+    }
+  } else if (timer >= 25.0) {
+
+    // scroll background images
+    this->scrollBackground(delta);
+
+    // update obstacles
+    this->updateObstacles(delta);
 
     /* Implementation of effects for future reference
     lens = Lens3D::create(10, Size(32,24), Vec2(100,180), 150);
@@ -127,9 +198,6 @@ void Game::update(float delta)
     nodeGrid->runAction(RepeatForever::create((Sequence*)Sequence::create(waves, lens, NULL)));
     this->addChild(nodeGrid);
     */
-
-    // scroll background images
-    this->scrollBackground(1500, delta);
   }
 }
 
@@ -163,7 +231,7 @@ void Game::onAcceleration(cocos2d::Acceleration *acc, cocos2d::Event *event){
   }
 }
 
-void Game::scrollBackground(int bgspeed, float delta){
+void Game::scrollBackground(float delta){
   auto position = bg1->getPosition();
   position.x -= bgspeed * delta;
   if (position.x  < 0 - (bg1->getBoundingBox().size.width / 2))
@@ -187,6 +255,60 @@ void Game::scrollBackground(int bgspeed, float delta){
   if (position.x  < 0 - (bg4->getBoundingBox().size.width / 2))
     position.x = this->getBoundingBox().getMaxX() + bg4->getBoundingBox().size.width/2;
   bg4->setPosition(position);
+}
+
+void Game::updateObstacles(float delta){
+  // update car obstacles
+  auto position = carObstacle->getPosition();
+  position.x -=  carObstacleSpeedX * delta;
+  if (position.x < 0 - (carObstacle->getBoundingBox().size.width / 2)){
+    carObstacleSpeedX = cocos2d::RandomHelper::random_int(500, 1000);
+    carObstacleSpeedY = cocos2d::RandomHelper::random_int(-100, 100);
+    position.x = this->getBoundingBox().getMaxX() + carObstacle->getBoundingBox().size.width/2;
+    position.y = visibleSize.height/2;
+  }
+  carObstacle->setPosition(position);
+
+  // update trees
+  /*for(int i = 0; i < currentTrees.length; i++){
+    // get tree position
+    auto position = treeObstacles[currentTrees[i].index]->getPosition();
+    if (position.x < 0 - (treeObstacles[currentTrees[i].index]->getBoundingBox().size.width / 2)){
+      // pick new tree
+
+      // initialize y position
+
+      // generate speed
+    } else {
+      // continue moving tree
+    }
+  }
+
+  // update rocks
+  for(int i = 0; i < currentRocks.length; i++){
+    // get rocks position
+    auto position = rockObstacles[currentRocks[i].index]->getPosition();
+    if (position.x < 0 - (rockObstacles[currentRocks[i].index]->getBoundingBox().size.width / 2)){
+      // pick new rock
+
+      // initialize y position
+
+      // generate speed
+    } else {
+      // continue moving rock
+    }
+  }*/
+}
+
+void Game::resetObstacles(){
+  // reset sprites to outside of screen bounding box
+  for(auto tree : treeObstacles){
+    tree->setPosition(0 - (tree->getBoundingBox().size.width / 2), visibleSize.height/2);
+  }
+  for(auto rock : rockObstacles){
+    rock->setPosition(0 - (rock->getBoundingBox().size.width / 2), visibleSize.height/2);
+  }
+  carObstacle->setPosition(0 - (carObstacle->getBoundingBox().size.width / 2), visibleSize.height/2);
 }
 
 void Game::menuCloseCallback(Ref* pSender)

@@ -31,22 +31,22 @@ public:
     cocos2d::Sprite* bg2;
     cocos2d::Sprite* bg3;
     cocos2d::Sprite* bg4;
+    int bgspeed;
 
+    cocos2d::Label* prelimInst;
+    cocos2d::Label* drunkInst;
+    cocos2d::Sprite* pauseOverlay;
     bool isPaused;
 
     cocos2d::Sprite* player;
 
     cocos2d::Sprite* carObstacle;
 
-    cocos2d::Sprite* treeObstacle1;
-    cocos2d::Sprite* treeObstacle2;
-    cocos2d::Sprite* treeObstacle3;
-    cocos2d::Sprite* treeObstacle4;
+    cocos2d::Vector<cocos2d::Sprite*> treeObstacles;
+    int currentTrees[2];
 
-    cocos2d::Sprite* rockObstacle1;
-    cocos2d::Sprite* rockObstacle2;
-    cocos2d::Sprite* rockObstacle3;
-    cocos2d::Sprite* rockObstacle4;
+    cocos2d::Vector<cocos2d::Sprite*> rockObstacles;
+    int currentRocks[2];
 
     cocos2d::ActionInterval* lens;
     cocos2d::ActionInterval* waves;
@@ -56,7 +56,11 @@ public:
 
     float timer;
 
-    void scrollBackground(int, float);
+    void scrollBackground(float);
+
+    void updateObstacles(float);
+
+    void resetObstacles();
 };
 
 #endif // __GAME_SCENE_H__
