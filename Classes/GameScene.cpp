@@ -58,18 +58,18 @@ bool Game::init()
     // create instructions and pause screen
     prelimInst = Label::create("¡Evitá los obstaculos por 15 segundos!", "Helvetica", 72);
     prelimInst->setPosition(Vec2(origin.x + visibleSize.width/2, origin.y + visibleSize.height/2));
-    this->addChild(prelimInst, 4);
+    this->addChild(prelimInst, 10);
 
     drunkInst = Label::create("¿Ahora, podés evitar los obstaculos \n mientras estás alcoholizado?", "Helvetica", 72);
     drunkInst->setPosition(Vec2(origin.x + visibleSize.width/2, origin.y + visibleSize.height/2));
-    this->addChild(drunkInst, 4);
+    this->addChild(drunkInst, 10);
     drunkInst->setOpacity(0);
 
     pauseOverlay = Sprite::createWithSpriteFrameName("pause-overlay.png");
     float pauseScale = MAX(visibleSize.width / pauseOverlay->getContentSize().width, visibleSize.height / pauseOverlay->getContentSize().height);
     pauseOverlay->setScale(pauseScale);
     pauseOverlay->setPosition(Vec2(origin.x + visibleSize.width / 2, origin.y + visibleSize.height / 2));
-    this->addChild(pauseOverlay, 3);
+    this->addChild(pauseOverlay, 9);
     pauseOverlay->setOpacity(0.75*255);
 
     // create pause var
@@ -85,15 +85,20 @@ bool Game::init()
     auto accelListener = EventListenerAcceleration::create(CC_CALLBACK_2(Game::onAcceleration, this));
     _eventDispatcher->addEventListenerWithSceneGraphPriority(accelListener, this);
 
-    // create car obstacle
-    carObstacle = Sprite::createWithSpriteFrameName("red-car.png");
-    carObstacleSpeedX = 100;
-    carObstacle->setPosition(0 - (carObstacle->getBoundingBox().size.width / 2), visibleSize.height/2);
-    this->addChild(carObstacle, 2);
+    // create car obstacles
+    carObstacleRight = Sprite::createWithSpriteFrameName("red-car.png");
+    carObstacleRightSpeed = 1500;
+    carObstacleRight->setPosition(0 - (carObstacleRight->getBoundingBox().size.width / 2), this->getBoundingBox().getMaxY()/3 + this->getBoundingBox().getMaxY()/12);
+    this->addChild(carObstacleRight, 2);
+
+    carObstacleLeft = Sprite::createWithSpriteFrameName("red-car.png");
+    carObstacleLeftSpeed = 1500;
+    carObstacleLeft->setPosition(0 - (carObstacleRight->getBoundingBox().size.width / 2), (this->getBoundingBox().getMaxY()/3)*2 - this->getBoundingBox().getMaxY()/11);
+    this->addChild(carObstacleLeft, 2);
 
     // rotate car obstacle
     auto initRotate = RotateBy::create(0.1, 180);
-    carObstacle->runAction(initRotate);
+    carObstacleLeft->runAction(initRotate);
 
     // load tree obstacles
     char str[100];
@@ -105,12 +110,12 @@ bool Game::init()
       // put all trees beyond screen bounding box on left
       tree->setPosition(0 - (tree->getBoundingBox().size.width / 2), visibleSize.height/2);
 
+      // add tree to scene
+      this->addChild(tree, 2);
+
       // add tree to vectors
       treeObstacles.pushBack(tree);
     }
-    // set starting trees to be first two
-    currentTrees[0] = 0;
-    currentTrees[1] = 1;
 
     // load rock obstacles
     for(int i = 0; i < 4; i++){
@@ -121,12 +126,12 @@ bool Game::init()
       // put all trees beyond screen bounding box on left
       rock->setPosition(0 - (rock->getBoundingBox().size.width / 2), visibleSize.height/2);
 
+      // add rock to scene
+      this->addChild(rock, 2);
+
       // add tree to vectors
       rockObstacles.pushBack(rock);
     }
-    // set starting rocks to be first two
-    currentRocks[0] = 0;
-    currentRocks[1] = 1;
 
     // start timer
     this->schedule(schedule_selector(Game::updateTimer), 0.1f);
@@ -259,45 +264,59 @@ void Game::scrollBackground(float delta){
 
 void Game::updateObstacles(float delta){
   // update car obstacles
-  auto position = carObstacle->getPosition();
-  position.x -=  carObstacleSpeedX * delta;
-  if (position.x < 0 - (carObstacle->getBoundingBox().size.width / 2)){
-    carObstacleSpeedX = cocos2d::RandomHelper::random_int(500, 1000);
-    carObstacleSpeedY = cocos2d::RandomHelper::random_int(-100, 100);
-    position.x = this->getBoundingBox().getMaxX() + carObstacle->getBoundingBox().size.width/2;
-    position.y = visibleSize.height/2;
+  auto position = carObstacleRight->getPosition();
+  position.x -=  carObstacleRightSpeed * delta;
+  if (position.x < 0 - (carObstacleRight->getBoundingBox().size.width / 2)){
+    carObstacleRightSpeed = cocos2d::RandomHelper::random_int(bgspeed - (bgspeed/5)*3, bgspeed - bgspeed/5);
+    position.x = this->getBoundingBox().getMaxX() + carObstacleRight->getBoundingBox().size.width/2 + cocos2d::RandomHelper::random_int(0, static_cast<int>(this->getBoundingBox().getMaxX()));
   }
-  carObstacle->setPosition(position);
+  carObstacleRight->setPosition(position);
+
+  position = carObstacleLeft->getPosition();
+  position.x -=  carObstacleLeftSpeed * delta;
+  if (position.x < 0 - (carObstacleLeft->getBoundingBox().size.width / 2)){
+    carObstacleLeftSpeed = cocos2d::RandomHelper::random_int(bgspeed, bgspeed + bgspeed/3);
+    position.x = this->getBoundingBox().getMaxX() + carObstacleLeft->getBoundingBox().size.width/2 + cocos2d::RandomHelper::random_int(0, static_cast<int>(this->getBoundingBox().getMaxX()));
+  }
+  carObstacleLeft->setPosition(position);
 
   // update trees
-  /*for(int i = 0; i < currentTrees.length; i++){
+  int i = 0;
+  for(auto tree : treeObstacles){
     // get tree position
-    auto position = treeObstacles[currentTrees[i].index]->getPosition();
-    if (position.x < 0 - (treeObstacles[currentTrees[i].index]->getBoundingBox().size.width / 2)){
-      // pick new tree
-
-      // initialize y position
-
-      // generate speed
-    } else {
-      // continue moving tree
+    position = tree->getPosition();
+    position.x -=  bgspeed * delta;
+    if (position.x < 0 - (tree->getBoundingBox().size.width / 2)){
+      // initialize new position
+      position.x = this->getBoundingBox().getMaxX() + (tree->getBoundingBox().size.width / 2) + cocos2d::RandomHelper::random_int(0, static_cast<int>(this->getBoundingBox().getMaxX()));
+      if(i < 2){
+        position.y = cocos2d::RandomHelper::random_int(static_cast<int>(this->getBoundingBox().getMaxY()/15), static_cast<int>(this->getBoundingBox().getMaxY()/3 - this->getBoundingBox().getMaxY()/12));
+      } else {
+        position.y = cocos2d::RandomHelper::random_int(static_cast<int>((this->getBoundingBox().getMaxY()/3)*2 + this->getBoundingBox().getMaxY()/12), static_cast<int>(this->getBoundingBox().getMaxY() - this->getBoundingBox().getMaxY()/15));
+      }
     }
+    tree->setPosition(position);
+    i++;
   }
 
   // update rocks
-  for(int i = 0; i < currentRocks.length; i++){
+  i = 0;
+  for(auto rock : rockObstacles){
     // get rocks position
-    auto position = rockObstacles[currentRocks[i].index]->getPosition();
-    if (position.x < 0 - (rockObstacles[currentRocks[i].index]->getBoundingBox().size.width / 2)){
-      // pick new rock
-
-      // initialize y position
-
-      // generate speed
-    } else {
-      // continue moving rock
+    position = rock->getPosition();
+    position.x -=  bgspeed * delta;
+    if (position.x < 0 - (rock->getBoundingBox().size.width / 2)){
+      // initialize new position
+      position.x = this->getBoundingBox().getMaxX() + (rock->getBoundingBox().size.width / 2) + cocos2d::RandomHelper::random_int(0, static_cast<int>(this->getBoundingBox().getMaxX()));
+      if(i < 2){
+        position.y = cocos2d::RandomHelper::random_int(static_cast<int>(this->getBoundingBox().getMaxY()/15), static_cast<int>(this->getBoundingBox().getMaxY()/3 - this->getBoundingBox().getMaxY()/12));
+      } else {
+        position.y = cocos2d::RandomHelper::random_int(static_cast<int>((this->getBoundingBox().getMaxY()/3)*2 + this->getBoundingBox().getMaxY()/12), static_cast<int>(this->getBoundingBox().getMaxY() - this->getBoundingBox().getMaxY()/15));
+      }
     }
-  }*/
+    rock->setPosition(position);
+    i++;
+  }
 }
 
 void Game::resetObstacles(){
@@ -308,7 +327,8 @@ void Game::resetObstacles(){
   for(auto rock : rockObstacles){
     rock->setPosition(0 - (rock->getBoundingBox().size.width / 2), visibleSize.height/2);
   }
-  carObstacle->setPosition(0 - (carObstacle->getBoundingBox().size.width / 2), visibleSize.height/2);
+  carObstacleRight->setPosition(0 - (carObstacleRight->getBoundingBox().size.width / 2), this->getBoundingBox().getMaxY()/3 + this->getBoundingBox().getMaxY()/12);
+  carObstacleLeft->setPosition(0 - (carObstacleRight->getBoundingBox().size.width / 2), (this->getBoundingBox().getMaxY()/3)*2 - this->getBoundingBox().getMaxY()/11);
 }
 
 void Game::menuCloseCallback(Ref* pSender)

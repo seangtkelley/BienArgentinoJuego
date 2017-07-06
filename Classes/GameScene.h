@@ -40,19 +40,18 @@ public:
 
     cocos2d::Sprite* player;
 
-    cocos2d::Sprite* carObstacle;
+    cocos2d::Sprite* carObstacleRight;
+    cocos2d::Sprite* carObstacleLeft;
 
     cocos2d::Vector<cocos2d::Sprite*> treeObstacles;
-    int currentTrees[2];
 
     cocos2d::Vector<cocos2d::Sprite*> rockObstacles;
-    int currentRocks[2];
 
     cocos2d::ActionInterval* lens;
     cocos2d::ActionInterval* waves;
 
-    int carObstacleSpeedX;
-    int carObstacleSpeedY;
+    int carObstacleRightSpeed;
+    int carObstacleLeftSpeed;
 
     float timer;
 
