@@ -111,7 +111,7 @@ bool Game::init()
       tree->setPosition(0 - (tree->getBoundingBox().size.width / 2), visibleSize.height/2);
 
       // add tree to scene
-      this->addChild(tree, 2);
+      this->addChild(tree, 3);
 
       // add tree to vectors
       treeObstacles.pushBack(tree);
