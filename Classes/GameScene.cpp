@@ -26,6 +26,12 @@ bool Game::init()
     windowSize = Director::getInstance()->getWinSize();
     origin = Director::getInstance()->getVisibleOrigin();
     timer = 0.0;
+    isPaused = true;
+    isDrunk = false;
+    bgspeed = 1500;
+
+    // create node grid for all sprites
+    spriteGrid = NodeGrid::create();
 
     // open sprite sheet
     SpriteFrameCache::getInstance()->addSpriteFramesWithFile("game-assets.plist");
@@ -47,13 +53,10 @@ bool Game::init()
     bg3->setPosition(Vec2(bg2->getPosition().x + bg1->getContentSize().width, bg1->getPosition().y));
     bg4->setPosition(Vec2(bg3->getPosition().x + bg1->getContentSize().width, bg1->getPosition().y));
 
-    this->addChild(bg1);
-    this->addChild(bg2);
-    this->addChild(bg3);
-    this->addChild(bg4);
-
-    // set background speed
-    bgspeed = 1500;
+    spriteGrid->addChild(bg1);
+    spriteGrid->addChild(bg2);
+    spriteGrid->addChild(bg3);
+    spriteGrid->addChild(bg4);
 
     // create instructions and pause screen
     prelimInst = Label::create("¡Evitá los obstaculos por 15 segundos!", "Helvetica", 72);
@@ -72,13 +75,10 @@ bool Game::init()
     this->addChild(pauseOverlay, 9);
     pauseOverlay->setOpacity(0.75*255);
 
-    // create pause var
-    isPaused = true;
-
     // create player car
     player = Sprite::createWithSpriteFrameName("red-car.png");
     player->setPosition(Vec2(origin.x + player->getContentSize().width, visibleSize.height/2 + origin.y));
-    this->addChild(player, 2);
+    spriteGrid->addChild(player, 2);
 
     // add accelerometer listener for player car
     Device::setAccelerometerEnabled(true);
@@ -89,12 +89,12 @@ bool Game::init()
     carObstacleRight = Sprite::createWithSpriteFrameName("red-car.png");
     carObstacleRightSpeed = 1500;
     carObstacleRight->setPosition(0 - (carObstacleRight->getBoundingBox().size.width / 2), this->getBoundingBox().getMaxY()/3 + this->getBoundingBox().getMaxY()/12);
-    this->addChild(carObstacleRight, 2);
+    spriteGrid->addChild(carObstacleRight, 2);
 
     carObstacleLeft = Sprite::createWithSpriteFrameName("red-car.png");
     carObstacleLeftSpeed = 1500;
     carObstacleLeft->setPosition(0 - (carObstacleRight->getBoundingBox().size.width / 2), (this->getBoundingBox().getMaxY()/3)*2 - this->getBoundingBox().getMaxY()/11);
-    this->addChild(carObstacleLeft, 2);
+    spriteGrid->addChild(carObstacleLeft, 2);
 
     // rotate car obstacle
     auto initRotate = RotateBy::create(0.1, 180);
@@ -111,7 +111,7 @@ bool Game::init()
       tree->setPosition(0 - (tree->getBoundingBox().size.width / 2), visibleSize.height/2);
 
       // add tree to scene
-      this->addChild(tree, 3);
+      spriteGrid->addChild(tree, 3);
 
       // add tree to vectors
       treeObstacles.pushBack(tree);
@@ -127,11 +127,14 @@ bool Game::init()
       rock->setPosition(0 - (rock->getBoundingBox().size.width / 2), visibleSize.height/2);
 
       // add rock to scene
-      this->addChild(rock, 2);
+      spriteGrid->addChild(rock, 2);
 
       // add tree to vectors
       rockObstacles.pushBack(rock);
     }
+
+    // add sprite grid to scene
+    this->addChild(spriteGrid);
 
     // start timer
     this->schedule(schedule_selector(Game::updateTimer), 0.1f);
@@ -195,14 +198,14 @@ void Game::update(float delta)
     // update obstacles
     this->updateObstacles(delta);
 
-    /* Implementation of effects for future reference
-    lens = Lens3D::create(10, Size(32,24), Vec2(100,180), 150);
-    waves = Waves3D::create(10, Size(15,10), 18, 15);
-    auto nodeGrid = NodeGrid::create();
-    nodeGrid->addChild(player);
-    nodeGrid->runAction(RepeatForever::create((Sequence*)Sequence::create(waves, lens, NULL)));
-    this->addChild(nodeGrid);
-    */
+    // become drunk
+    if(!isDrunk){
+      auto ripple = Ripple3D::create(10, Size(32,24), Vec2(windowSize.width/2, windowSize.height/2), windowSize.width*2, 50, 150.0);
+      auto waves = Waves3D::create(10, Size(32,24), 30, 150);
+      auto shake = Shaky3D::create(10, Size(32,24), 30, true);
+      spriteGrid->runAction(RepeatForever::create((Sequence*)Sequence::create(ripple, waves, shake, NULL)));
+      isDrunk = true;
+    }
   }
 }
 

@@ -27,6 +27,8 @@ public:
     cocos2d::Size windowSize;
     cocos2d::Vec2 origin;
 
+    cocos2d::NodeGrid* spriteGrid;
+
     cocos2d::Sprite* bg1;
     cocos2d::Sprite* bg2;
     cocos2d::Sprite* bg3;
@@ -47,8 +49,7 @@ public:
 
     cocos2d::Vector<cocos2d::Sprite*> rockObstacles;
 
-    cocos2d::ActionInterval* lens;
-    cocos2d::ActionInterval* waves;
+    bool isDrunk;
 
     int carObstacleRightSpeed;
     int carObstacleLeftSpeed;
