@@ -71,7 +71,7 @@ bool Game::init()
     this->addChild(drunkInst, 10);
     drunkInst->setOpacity(0);
 
-    crashInst = Label::create("¡Ah, chocaste tu carro! Durabas por <TIME> segundos.", "Helvetica", 72);
+    crashInst = Label::create("¡Ah, chocaste tu carro! Durabas por 0 segundos.", "Helvetica", 72);
     crashInst->setPosition(Vec2(origin.x + visibleSize.width/2, origin.y + visibleSize.height/2));
     this->addChild(crashInst, 10);
     crashInst->setOpacity(0);
@@ -253,8 +253,11 @@ void Game::update(float delta)
   } else {
     if(!isPaused){
       auto fadeIn = FadeTo::create(0.75, 0.75*255);
-      crashInst->setOpacity(255);
       pauseOverlay->runAction(fadeIn);
+      char str[100];
+      sprintf(str, "¡Ah, chocaste tu carro! Durabas por %.1f segundos.", timer);
+      crashInst->setString(str);
+      crashInst->setOpacity(255);
       isPaused = true;
     }
   }
