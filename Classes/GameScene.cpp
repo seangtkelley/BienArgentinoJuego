@@ -5,8 +5,10 @@ USING_NS_CC;
 
 Scene* Game::createScene()
 {
-  auto scene = Scene::create();
+  auto scene = Scene::createWithPhysics();
+  scene->getPhysicsWorld()->setDebugDrawMask(PhysicsWorld::DEBUGDRAW_ALL);
   auto layer = Game::create();
+  layer->SetPhysicsWorld(scene->getPhysicsWorld());
   scene->addChild(layer);
   return scene;
 }
@@ -28,6 +30,7 @@ bool Game::init()
     timer = 0.0;
     isPaused = true;
     isDrunk = false;
+    isCrashed = false;
     bgspeed = 1500;
 
     // create node grid for all sprites
@@ -68,6 +71,11 @@ bool Game::init()
     this->addChild(drunkInst, 10);
     drunkInst->setOpacity(0);
 
+    crashInst = Label::create("¡Ah, chocaste tu carro! Durabas por <TIME> segundos.", "Helvetica", 72);
+    crashInst->setPosition(Vec2(origin.x + visibleSize.width/2, origin.y + visibleSize.height/2));
+    this->addChild(crashInst, 10);
+    crashInst->setOpacity(0);
+
     pauseOverlay = Sprite::createWithSpriteFrameName("pause-overlay.png");
     float pauseScale = MAX(visibleSize.width / pauseOverlay->getContentSize().width, visibleSize.height / pauseOverlay->getContentSize().height);
     pauseOverlay->setScale(pauseScale);
@@ -78,6 +86,12 @@ bool Game::init()
     // create player car
     player = Sprite::createWithSpriteFrameName("red-car.png");
     player->setPosition(Vec2(origin.x + player->getContentSize().width, visibleSize.height/2 + origin.y));
+    auto playerBody = PhysicsBody::createBox(player->getContentSize(), PHYSICSBODY_MATERIAL_DEFAULT);
+    playerColBitmask = 1;
+    playerBody->setCollisionBitmask(playerColBitmask);
+    playerBody->setContactTestBitmask(0xFFFFFFFF);
+    playerBody->setDynamic(false);
+    player->setPhysicsBody(playerBody);
     spriteGrid->addChild(player, 2);
 
     // add accelerometer listener for player car
@@ -85,20 +99,31 @@ bool Game::init()
     auto accelListener = EventListenerAcceleration::create(CC_CALLBACK_2(Game::onAcceleration, this));
     _eventDispatcher->addEventListenerWithSceneGraphPriority(accelListener, this);
 
-    // create car obstacles
+    // create left car obstacle
     carObstacleRight = Sprite::createWithSpriteFrameName("red-car.png");
     carObstacleRightSpeed = 1500;
     carObstacleRight->setPosition(0 - (carObstacleRight->getBoundingBox().size.width / 2), this->getBoundingBox().getMaxY()/3 + this->getBoundingBox().getMaxY()/12);
+
+    auto carObRBody = PhysicsBody::createBox(carObstacleRight->getContentSize(), PHYSICSBODY_MATERIAL_DEFAULT);
+    carObRBody->setDynamic(false);
+    carObRBody->setContactTestBitmask(0xFFFFFFFF);
+    carObstacleRight->setPhysicsBody(carObRBody);
+
     spriteGrid->addChild(carObstacleRight, 2);
 
+    // create right car obstacle
     carObstacleLeft = Sprite::createWithSpriteFrameName("red-car.png");
+    carObstacleLeft->setFlippedX(true);
     carObstacleLeftSpeed = 1500;
     carObstacleLeft->setPosition(0 - (carObstacleRight->getBoundingBox().size.width / 2), (this->getBoundingBox().getMaxY()/3)*2 - this->getBoundingBox().getMaxY()/11);
+
+    auto carObLBody = PhysicsBody::createBox(carObstacleLeft->getContentSize(), PHYSICSBODY_MATERIAL_DEFAULT);
+    carObLBody->setDynamic(false);
+    carObLBody->setContactTestBitmask(0xFFFFFFFF);
+    carObstacleLeft->setPhysicsBody(carObLBody);
+
     spriteGrid->addChild(carObstacleLeft, 2);
 
-    // rotate car obstacle
-    auto initRotate = RotateBy::create(0.1, 180);
-    carObstacleLeft->runAction(initRotate);
 
     // load tree obstacles
     char str[100];
@@ -109,6 +134,12 @@ bool Game::init()
 
       // put all trees beyond screen bounding box on left
       tree->setPosition(0 - (tree->getBoundingBox().size.width / 2), visibleSize.height/2);
+
+      // create physics body for tree
+      auto treeBody = PhysicsBody::createCircle(tree->getContentSize().width/2, PHYSICSBODY_MATERIAL_DEFAULT);
+      treeBody->setDynamic(false);
+      treeBody->setContactTestBitmask(0xFFFFFFFF);
+      tree->setPhysicsBody(treeBody);
 
       // add tree to scene
       spriteGrid->addChild(tree, 3);
@@ -126,6 +157,12 @@ bool Game::init()
       // put all trees beyond screen bounding box on left
       rock->setPosition(0 - (rock->getBoundingBox().size.width / 2), visibleSize.height/2);
 
+      // create physics body for tree
+      auto rockBody = PhysicsBody::createCircle(rock->getContentSize().width/1.5, PHYSICSBODY_MATERIAL_DEFAULT);
+      rockBody->setDynamic(false);
+      rockBody->setContactTestBitmask(0xFFFFFFFF);
+      rock->setPhysicsBody(rockBody);
+
       // add rock to scene
       spriteGrid->addChild(rock, 2);
 
@@ -136,6 +173,11 @@ bool Game::init()
     // add sprite grid to scene
     this->addChild(spriteGrid);
 
+    // create contact listener
+    auto contactListener = EventListenerPhysicsContact::create();
+    contactListener->onContactBegin = CC_CALLBACK_1(Game::onContactBegin, this);
+    _eventDispatcher->addEventListenerWithSceneGraphPriority(contactListener, this);
+
     // start timer
     this->schedule(schedule_selector(Game::updateTimer), 0.1f);
 
@@ -145,66 +187,75 @@ bool Game::init()
 
 void Game::update(float delta)
 {
-  if(timer > 1.0 && timer < 4.0){
-    // scroll background images
-    this->scrollBackground(delta);
+  if(!isCrashed){
+    if(timer > 1.0 && timer < 4.0){
+      // scroll background images
+      this->scrollBackground(delta);
 
-  } else if(timer >= 4.0 && timer < 5.0){
-    // scroll background images
-    this->scrollBackground(delta);
+    } else if(timer >= 4.0 && timer < 5.0){
+      // scroll background images
+      this->scrollBackground(delta);
 
-    if(isPaused){
-      // unpause game
-      auto fadeOut = FadeOut::create(0.75);
-      prelimInst->setOpacity(0);
-      pauseOverlay->runAction(fadeOut);
-      isPaused = false;
+      if(isPaused){
+        // unpause game
+        auto fadeOut = FadeOut::create(0.75);
+        prelimInst->setOpacity(0);
+        pauseOverlay->runAction(fadeOut);
+        isPaused = false;
+      }
+    } else if(timer >= 5.0 && timer < 20.0){
+      // scroll background images
+      this->scrollBackground(delta);
+
+      // update obstacles
+      this->updateObstacles(delta);
+
+    } else if(timer >= 20.0 && timer < 24.0) {
+      // scroll background images
+      this->scrollBackground(delta);
+
+      // display instructions about driving drunk
+      if(!isPaused){
+        auto fadeIn = FadeTo::create(0.75, 0.75*255);
+        drunkInst->setOpacity(255);
+        pauseOverlay->runAction(fadeIn);
+        this->resetObstacles();
+        isPaused = true;
+      }
+    } else if(timer >= 24.0 && timer < 25.0){
+      // scroll background images
+      this->scrollBackground(delta);
+
+      if(isPaused){
+        // unpause game
+        auto fadeOut = FadeOut::create(0.75);
+        drunkInst->setOpacity(0);
+        pauseOverlay->runAction(fadeOut);
+        isPaused = false;
+      }
+    } else if (timer >= 25.0) {
+
+      // scroll background images
+      this->scrollBackground(delta);
+
+      // update obstacles
+      this->updateObstacles(delta);
+
+      // become drunk
+      if(!isDrunk){
+        auto ripple = Ripple3D::create(10, Size(32,24), Vec2(windowSize.width/2, windowSize.height/2), windowSize.width*2, 50, 150.0);
+        auto waves = Waves3D::create(10, Size(32,24), 30, 150);
+        auto shake = Shaky3D::create(10, Size(32,24), 30, true);
+        spriteGrid->runAction(RepeatForever::create((Sequence*)Sequence::create(ripple, waves, shake, NULL)));
+        isDrunk = true;
+      }
     }
-  } else if(timer >= 5.0 && timer < 20.0){
-    // scroll background images
-    this->scrollBackground(delta);
-
-    // update obstacles
-    this->updateObstacles(delta);
-
-  } else if(timer >= 20.0 && timer < 24.0) {
-    // scroll background images
-    this->scrollBackground(delta);
-
-    // display instructions about driving drunk
+  } else {
     if(!isPaused){
       auto fadeIn = FadeTo::create(0.75, 0.75*255);
-      drunkInst->setOpacity(255);
+      crashInst->setOpacity(255);
       pauseOverlay->runAction(fadeIn);
-      this->resetObstacles();
       isPaused = true;
-    }
-  } else if(timer >= 24.0 && timer < 25.0){
-    // scroll background images
-    this->scrollBackground(delta);
-
-    if(isPaused){
-      // unpause game
-      auto fadeOut = FadeOut::create(0.75);
-      drunkInst->setOpacity(0);
-      pauseOverlay->runAction(fadeOut);
-      isPaused = false;
-    }
-  } else if (timer >= 25.0) {
-
-    // scroll background images
-    this->scrollBackground(delta);
-
-    // update obstacles
-    this->updateObstacles(delta);
-
-    // become drunk
-    if(!isDrunk){
-      auto ripple = Ripple3D::create(10, Size(32,24), Vec2(windowSize.width/2, windowSize.height/2), windowSize.width*2, 50, 150.0);
-      auto waves = Waves3D::create(10, Size(32,24), 30, 150);
-      auto shake = Shaky3D::create(10, Size(32,24), 30, true);
-      spriteGrid->runAction(RepeatForever::create((Sequence*)Sequence::create(ripple, waves, shake, NULL)));
-      isDrunk = true;
     }
   }
 }
@@ -215,28 +266,44 @@ void Game::updateTimer(float dt)
 }
 
 void Game::onAcceleration(cocos2d::Acceleration *acc, cocos2d::Event *event){
-  auto w = visibleSize.width;
-  auto h = visibleSize.height;
+  if(!isCrashed){
+    auto w = visibleSize.width;
+    auto h = visibleSize.height;
 
-  auto oldX = player->getPosition().x;
-  auto oldY = player->getPosition().y;
+    auto oldX = player->getPosition().x;
+    auto oldY = player->getPosition().y;
 
-  auto newX = oldX + (acc->x * w * 0.075);
-  auto newY = oldY + (acc->y * h * 0.075);
+    auto newX = oldX + (acc->x * w * 0.075);
+    auto newY = oldY + (acc->y * h * 0.075);
 
-  if(newX > player->getBoundingBox().size.width/2 && newX < this->getBoundingBox().getMaxX()-(player->getContentSize().width/2)){
-    if(newY > player->getBoundingBox().size.height * 2 && newY < this->getBoundingBox().getMaxY()-player->getBoundingBox().size.height * 2){
-      player->setPosition(newX, newY);
+    if(newX > player->getBoundingBox().size.width/2 && newX < this->getBoundingBox().getMaxX()-(player->getContentSize().width/2)){
+      if(newY > player->getBoundingBox().size.height * 2 && newY < this->getBoundingBox().getMaxY()-player->getBoundingBox().size.height * 2){
+        player->setPosition(newX, newY);
+      } else {
+        player->setPosition(newX, oldY);
+      }
     } else {
-      player->setPosition(newX, oldY);
-    }
-  } else {
-    if(newY > player->getBoundingBox().size.height * 2 && newY < this->getBoundingBox().getMaxY()-player->getBoundingBox().size.height * 2){
-      player->setPosition(oldX, newY);
-    } else {
-      player->setPosition(oldX, oldY);
+      if(newY > player->getBoundingBox().size.height * 2 && newY < this->getBoundingBox().getMaxY()-player->getBoundingBox().size.height * 2){
+        player->setPosition(oldX, newY);
+      } else {
+        player->setPosition(oldX, oldY);
+      }
     }
   }
+}
+
+bool Game::onContactBegin(cocos2d::PhysicsContact &contact){
+  PhysicsBody* a = contact.getShapeA()->getBody();
+  PhysicsBody* b = contact.getShapeB()->getBody();
+
+  // check to see if car is part of collision
+  if(a->getCollisionBitmask() == playerColBitmask || b->getCollisionBitmask() == playerColBitmask){
+    if(!isCrashed && !isPaused){
+      isCrashed = true;
+    }
+  }
+
+  return false;
 }
 
 void Game::scrollBackground(float delta){

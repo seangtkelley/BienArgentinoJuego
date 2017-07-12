@@ -18,11 +18,16 @@ public:
 
     void onAcceleration(cocos2d::Acceleration *acc, cocos2d::Event *event);
 
+    bool onContactBegin(cocos2d::PhysicsContact& contact);
+
     void update(float) override;
 
     void updateTimer(float);
 
   private:
+    cocos2d::PhysicsWorld* sceneWorld;
+    void SetPhysicsWorld(cocos2d::PhysicsWorld* world){ sceneWorld = world; };
+
     cocos2d::Size visibleSize;
     cocos2d::Size windowSize;
     cocos2d::Vec2 origin;
@@ -37,10 +42,12 @@ public:
 
     cocos2d::Label* prelimInst;
     cocos2d::Label* drunkInst;
+    cocos2d::Label* crashInst;
     cocos2d::Sprite* pauseOverlay;
     bool isPaused;
 
     cocos2d::Sprite* player;
+    int playerColBitmask;
 
     cocos2d::Sprite* carObstacleRight;
     cocos2d::Sprite* carObstacleLeft;
@@ -50,6 +57,7 @@ public:
     cocos2d::Vector<cocos2d::Sprite*> rockObstacles;
 
     bool isDrunk;
+    bool isCrashed;
 
     int carObstacleRightSpeed;
     int carObstacleLeftSpeed;
