@@ -24,6 +24,8 @@ public:
 
     void updateTimer(float);
 
+    void playAgain(Ref *pSender);
+
   private:
     cocos2d::PhysicsWorld* sceneWorld;
     void SetPhysicsWorld(cocos2d::PhysicsWorld* world){ sceneWorld = world; };
@@ -44,6 +46,8 @@ public:
     cocos2d::Label* drunkInst;
     cocos2d::Label* crashInst;
     cocos2d::Sprite* pauseOverlay;
+    cocos2d::Menu *playAgainMenu;
+    cocos2d::MenuItemSprite *jugar_de_nuevo_menu_item;
     bool isPaused;
 
     cocos2d::Sprite* player;
@@ -58,6 +62,7 @@ public:
 
     bool isDrunk;
     bool isCrashed;
+    int lives;
 
     int carObstacleRightSpeed;
     int carObstacleLeftSpeed;

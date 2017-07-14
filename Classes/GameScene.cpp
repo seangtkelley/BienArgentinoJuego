@@ -32,6 +32,7 @@ bool Game::init()
     isDrunk = false;
     isCrashed = false;
     bgspeed = 1500;
+    lives = 3;
 
     // create node grid for all sprites
     spriteGrid = NodeGrid::create();
@@ -62,11 +63,11 @@ bool Game::init()
     spriteGrid->addChild(bg4);
 
     // create instructions and pause screen
-    prelimInst = Label::create("¡Evitá los obstaculos por 15 segundos!", "Helvetica", 72);
+    prelimInst = Label::create("¡Evitá los obstaculos por 15 segundos! Tenés tres vidas.", "Helvetica", 72);
     prelimInst->setPosition(Vec2(origin.x + visibleSize.width/2, origin.y + visibleSize.height/2));
     this->addChild(prelimInst, 10);
 
-    drunkInst = Label::create("¿Ahora, podés evitar los obstaculos \n mientras estás alcoholizado?", "Helvetica", 72);
+    drunkInst = Label::create("¿Ahora, podés evitar los obstaculos \n mientras estás alcoholizado? \n Tenés tres vidas de nuevo.", "Helvetica", 72);
     drunkInst->setPosition(Vec2(origin.x + visibleSize.width/2, origin.y + visibleSize.height/2));
     this->addChild(drunkInst, 10);
     drunkInst->setOpacity(0);
@@ -82,6 +83,17 @@ bool Game::init()
     pauseOverlay->setPosition(Vec2(origin.x + visibleSize.width / 2, origin.y + visibleSize.height / 2));
     this->addChild(pauseOverlay, 9);
     pauseOverlay->setOpacity(0.75*255);
+
+    // create play again menu
+    auto jugar_de_nuevo_sprite = Sprite::createWithSpriteFrameName("buttons/jugar-de-nuevo.png");
+    auto jugar_de_nuevo_selected_sprite = Sprite::createWithSpriteFrameName("buttons/jugar-de-nuevo-selected.png");
+    jugar_de_nuevo_menu_item = MenuItemSprite::create(jugar_de_nuevo_sprite, jugar_de_nuevo_selected_sprite, CC_CALLBACK_1(Game::playAgain, this));
+    jugar_de_nuevo_menu_item->setScale(2.0);
+    jugar_de_nuevo_menu_item->setPosition(visibleSize.width/2, (visibleSize.height/6) * 3);
+    playAgainMenu = Menu::create(jugar_de_nuevo_menu_item, NULL);
+    playAgainMenu->setPosition(Vec2::ZERO);
+    this->addChild(playAgainMenu, 10);
+    playAgainMenu->setOpacity(0);
 
     // create player car
     player = Sprite::createWithSpriteFrameName("red-car.png");
@@ -220,6 +232,7 @@ void Game::update(float delta)
         drunkInst->setOpacity(255);
         pauseOverlay->runAction(fadeIn);
         this->resetObstacles();
+        lives = 3;
         isPaused = true;
       }
     } else if(timer >= 24.0 && timer < 25.0){
@@ -258,6 +271,7 @@ void Game::update(float delta)
       sprintf(str, "¡Ah, chocaste tu carro! Durabas por %.1f segundos.", timer);
       crashInst->setString(str);
       crashInst->setOpacity(255);
+      playAgainMenu->setOpacity(255);
       isPaused = true;
     }
   }
@@ -302,7 +316,11 @@ bool Game::onContactBegin(cocos2d::PhysicsContact &contact){
   // check to see if car is part of collision
   if(a->getCollisionBitmask() == playerColBitmask || b->getCollisionBitmask() == playerColBitmask){
     if(!isCrashed && !isPaused){
-      isCrashed = true;
+      if(lives <= 0){
+        isCrashed = true;
+      } else {
+        lives--;
+      }
     }
   }
 
@@ -404,6 +422,10 @@ void Game::resetObstacles(){
   carObstacleLeft->setPosition(0 - (carObstacleRight->getBoundingBox().size.width / 2), (this->getBoundingBox().getMaxY()/3)*2 - this->getBoundingBox().getMaxY()/11);
 }
 
+void Game::playAgain(cocos2d::Ref *pSender){
+  Director::getInstance()->popScene();
+}
+
 void Game::menuCloseCallback(Ref* pSender)
 {
     //Close the cocos2d-x game scene and quit the application
@@ -417,6 +439,4 @@ void Game::menuCloseCallback(Ref* pSender)
 
     //EventCustom customEndEvent("game_scene_close_event");
     //_eventDispatcher->dispatchEvent(&customEndEvent);
-
-
 }
