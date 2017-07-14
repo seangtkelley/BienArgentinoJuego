@@ -64,7 +64,7 @@ void AppDelegate::initDirector()
 {
     auto director = Director::getInstance();
     director->setAnimationInterval(1.0 / 60);
-    director->setDisplayStats(true);
+    director->setDisplayStats(false);
 }
 
 void AppDelegate::createAndRunScene()

@@ -6,7 +6,6 @@ USING_NS_CC;
 Scene* Game::createScene()
 {
   auto scene = Scene::createWithPhysics();
-  scene->getPhysicsWorld()->setDebugDrawMask(PhysicsWorld::DEBUGDRAW_ALL);
   auto layer = Game::create();
   layer->SetPhysicsWorld(scene->getPhysicsWorld());
   scene->addChild(layer);
