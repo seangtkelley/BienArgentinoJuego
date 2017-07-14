@@ -148,7 +148,7 @@ bool Game::init()
       tree->setPosition(0 - (tree->getBoundingBox().size.width / 2), visibleSize.height/2);
 
       // create physics body for tree
-      auto treeBody = PhysicsBody::createCircle(tree->getContentSize().width/2, PHYSICSBODY_MATERIAL_DEFAULT);
+      auto treeBody = PhysicsBody::createCircle(tree->getContentSize().width/2.15, PHYSICSBODY_MATERIAL_DEFAULT);
       treeBody->setDynamic(false);
       treeBody->setContactTestBitmask(0xFFFFFFFF);
       tree->setPhysicsBody(treeBody);
@@ -170,7 +170,7 @@ bool Game::init()
       rock->setPosition(0 - (rock->getBoundingBox().size.width / 2), visibleSize.height/2);
 
       // create physics body for tree
-      auto rockBody = PhysicsBody::createCircle(rock->getContentSize().width/1.5, PHYSICSBODY_MATERIAL_DEFAULT);
+      auto rockBody = PhysicsBody::createCircle(rock->getContentSize().width/1.75, PHYSICSBODY_MATERIAL_DEFAULT);
       rockBody->setDynamic(false);
       rockBody->setContactTestBitmask(0xFFFFFFFF);
       rock->setPhysicsBody(rockBody);
