@@ -39,20 +39,20 @@ bool MainMenu::init()
 
     auto play_menu_item = MenuItemSprite::create(play_sprite, play_selected_sprite, CC_CALLBACK_1(MainMenu::play, this));
     //auto highscores_menu_item = MenuItemFont::create("Puntajes", CC_CALLBACK_1(MainMenu::highscores, this));
-    auto instructions_menu_item = MenuItemSprite::create(instrucciones_sprite, instrucciones_selected_sprite, CC_CALLBACK_1(MainMenu::instructions, this));
+    //auto instructions_menu_item = MenuItemSprite::create(instrucciones_sprite, instrucciones_selected_sprite, CC_CALLBACK_1(MainMenu::instructions, this));
     auto quit_menu_item = MenuItemSprite::create(salir_sprite, salir_selected_sprite, CC_CALLBACK_1(MainMenu::quit, this));
 
     play_menu_item->setScale(2.0);
-    instructions_menu_item->setScale(2.0);
+    //instructions_menu_item->setScale(2.0);
     quit_menu_item->setScale(2.0);
 
     play_menu_item->setPosition(visibleSize.width/2, (visibleSize.height/6) * 4);
     //highscores_menu_item->setPosition(visibleSize.width/2, (visibleSize.height/5) * 3);
-    instructions_menu_item->setPosition(visibleSize.width/2, (visibleSize.height/6) * 3);
-    quit_menu_item->setPosition(visibleSize.width/2, (visibleSize.height/6) * 2);
+    //instructions_menu_item->setPosition(visibleSize.width/2, (visibleSize.height/6) * 3);
+    quit_menu_item->setPosition(visibleSize.width/2, (visibleSize.height/6) * 3);
 
     // create menu, it's an autorelease object
-    menu = Menu::create(play_menu_item, /*highscores_menu_item,*/ instructions_menu_item, quit_menu_item, NULL);
+    menu = Menu::create(play_menu_item, /*highscores_menu_item, instructions_menu_item,*/ quit_menu_item, NULL);
     menu->setPosition(Vec2::ZERO);
     this->addChild(menu, 2);
 
