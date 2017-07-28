@@ -12,4 +12,4 @@ Un juego desarrollado para mostrar los efectos de manejar alcoholizado.
 - [TexturePacker (en íngles)](https://www.codeandweb.com/texturepacker/tutorials/animations-and-spritesheets-in-cocos2d-x)
 
 ### Comentarios
-[La documentación](http://www.cocos2d-x.org/docs/api-ref/cplusplus/v3x/) y [wiki](http://www.cocos2d-x.org/wiki) tienen mucha información y cosas que pueden ayudarte desarollar. También, dejé comentarios en todos los archivos describiendo lo que hice pero en íngles. Si alguien quiere, puedo traducir.
+[La documentación](http://www.cocos2d-x.org/docs/api-ref/cplusplus/v3x/) y [wiki](http://www.cocos2d-x.org/wiki) tienen mucha información y cosas que pueden ayudarte a desarollar. También, dejé comentarios en todos los archivos describiendo lo que hice pero en íngles. Si alguien quiere, puedo traducir.
